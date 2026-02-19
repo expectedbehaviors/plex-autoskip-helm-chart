@@ -8,8 +8,9 @@ This repo automates the release cycle for the **plex-auto-skip** Helm chart: **m
 |---------------|---------|---------|
 | [release-on-merge.yml](release-on-merge.yml) | Push to `main` (chart files only) | Run `helm lint`, then bump patch version, create tag (e.g. `v0.1.1`) and publish GitHub Release |
 | [helm-publish.yml](helm-publish.yml) | **Release published** or *Release on merge* completes (on success) | Package chart and upload `plex-auto-skip-<version>.tgz` to the GitHub Release |
+| [release-notes.yml](release-notes.yml) | **Release published** or *Release on merge* completes (on success) | Populate release notes from the merged PR (OpenAI-summarized bullet points) |
 
-Both use reusable actions from **expectedbehaviors/github-actions**. To pin a version, replace `@main` with `@v1` (or another tag) in the workflow files.
+All use reusable actions from **expectedbehaviors/github-actions**. To pin a version, replace `@main` with `@v1` (or another tag) in the workflow files.
 
 ## What runs when
 
@@ -20,6 +21,7 @@ Both use reusable actions from **expectedbehaviors/github-actions**. To pin a ve
 ## Required
 
 - **GITHUB_TOKEN** is provided by GitHub Actions; no extra secrets needed for packaging and upload.
+- **Release notes workflow:** add repository secret **OPENAI_API_KEY** if you want release notes auto-populated from the merged PR (see [release-notes.yml](release-notes.yml)).
 
 ## Helm chart publishing
 
