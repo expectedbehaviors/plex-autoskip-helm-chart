@@ -1,0 +1,83 @@
+# plex-auto-skip – defaults for PlexAutoSkip (bjw-s app-template).
+# Parent chart (plex) passes overrides under key "skip"; they merge here.
+# PlexAutoSkip is headless (no HTTP server); service and ingress are disabled.
+#
+# Persistence: by default this chart creates a PVC for /config. A parent or
+# values override can replace that with an existing claim (existingClaim),
+# or use type: secret / type: configMap (e.g. ExternalSecrets) and name: <name>.
+
+fullnameOverride: plex-auto-skip
+
+skip:
+  global:
+    fullnameOverride: plex-auto-skip
+
+  # LinuxServer base runs the app as user abc (PUID/PGID). We run the pod non-root
+  # and set LSIO_NON_ROOT_USER so init skips root-only steps; fsGroup makes /config writable.
+  defaultPodOptions:
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 911
+      runAsGroup: 911
+      fsGroup: 911
+
+  ingress:
+    main:
+      enabled: false
+
+  # Single controller: one Deployment, one container. No service (headless).
+  controllers:
+    main:
+      enabled: true
+      type: deployment
+      replicas: 1
+      containers:
+        main:
+          image:
+            repository: ghcr.io/mdhiggins/plexautoskip-docker
+            tag: latest
+            pullPolicy: IfNotPresent
+          env:
+            PUID: "911"
+            PGID: "911"
+            TZ: America/Los_Angeles
+            PAS_PATH: /usr/local/pas
+            PAS_UPDATE: "false"
+            LSIO_NON_ROOT_USER: "true"
+          probes:
+            startup:
+              enabled: false
+            liveness:
+              enabled: false
+            readiness:
+              enabled: false
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 911
+            runAsGroup: 911
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+
+  service:
+    main:
+      enabled: false
+
+  # Default: chart creates a PVC for /config. Override with existingClaim, or
+  # type: secret / type: configMap + name (e.g. Secret from ExternalSecrets).
+  # /config must contain config.ini (and optionally custom.json, logging.ini).
+  persistence:
+    config:
+      enabled: true
+      type: persistentVolumeClaim
+      accessMode: ReadWriteOnce
+      size: 1Gi
+      globalMounts:
+        - path: /config
+          readOnly: false
