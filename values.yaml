@@ -1,10 +1,8 @@
-# plex-auto-skip – defaults for PlexAutoSkip (bjw-s app-template).
-# Parent chart (plex) passes overrides under key "skip"; they merge here.
-# PlexAutoSkip is headless (no HTTP server); service and ingress are disabled.
-#
-# Persistence: by default this chart creates a PVC for /config. A parent or
-# values override can replace that with an existing claim (existingClaim),
-# or use type: secret / type: configMap (e.g. ExternalSecrets) and name: <name>.
+# plex-auto-skip – base chart for PlexAutoSkip (bjw-s app-template).
+# This chart only runs the app and mounts a volume at /config (default: PVC).
+# Config files (config.ini, logging.ini, custom.json) are NOT created here.
+# Parent chart (e.g. homelab/helm/plex) can create a ConfigMap, Secret, or ExternalSecret
+# and override skip.persistence.config to mount it (type: configMap or secret, name: <resource-name>).
 
 fullnameOverride: plex-auto-skip
 
@@ -12,8 +10,6 @@ skip:
   global:
     fullnameOverride: plex-auto-skip
 
-  # LinuxServer base runs the app as user abc (PUID/PGID). We run the pod non-root
-  # and set LSIO_NON_ROOT_USER so init skips root-only steps; fsGroup makes /config writable.
   defaultPodOptions:
     securityContext:
       runAsNonRoot: true
@@ -25,12 +21,18 @@ skip:
     main:
       enabled: false
 
-  # Single controller: one Deployment, one container. No service (headless).
+  # No config templating in this chart. Parent chart creates ConfigMap/Secret/ExternalSecret and overrides persistence.
+  configMaps:
+    pas-config:
+      enabled: false
+      data: {}
+
   controllers:
     main:
       enabled: true
       type: deployment
       replicas: 1
+      initContainers: {}
       containers:
         main:
           image:
@@ -69,15 +71,17 @@ skip:
     main:
       enabled: false
 
-  # Default: chart creates a PVC for /config. Override with existingClaim, or
-  # type: secret / type: configMap + name (e.g. Secret from ExternalSecrets).
-  # /config must contain config.ini (and optionally custom.json, logging.ini).
+  # Default: PVC mounted at /config. Parent chart overrides to type: secret or type: configMap with name: <x> when it creates the config.
   persistence:
     config:
       enabled: true
       type: persistentVolumeClaim
       accessMode: ReadWriteOnce
-      size: 1Gi
+      size: 100Mi
       globalMounts:
         - path: /config
           readOnly: false
+    pas-config-files:
+      enabled: false
+      type: configMap
+      identifier: pas-config
