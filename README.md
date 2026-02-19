@@ -24,71 +24,44 @@ helm install plex-auto-skip . -f values.yaml
 
 ## Setup and configuration
 
-PlexAutoSkip is headless (no Service/Ingress). It needs a writable **config** directory mounted at `/config` containing:
+PlexAutoSkip is headless (no Service/Ingress). It needs a **config** directory mounted at `/config` containing:
 
 1. **`config.ini`** — Required. Plex credentials and skip options.
 2. **`custom.json`** (optional) — Per-title markers, offsets, and allow/block lists.
 3. **`logging.ini`** (optional) — Log level and output.
 
-### 1. Create `config.ini`
+### This chart: PVC mount only
 
-Copy the [sample](https://github.com/mdhiggins/PlexAutoSkip/blob/main/setup/config.ini.sample) or create a default (the container can create one on first run). Minimal example:
+This **base chart** does **not** generate config files. It only runs the app and mounts a **volume at `/config`**. By default that volume is a **PersistentVolumeClaim** (100Mi, ReadWriteOnce). You can override `persistence.config` to mount a ConfigMap or Secret instead (e.g. when used as a subchart and the parent provides config).
 
-```ini
-[Plex]
-username = your_plex_username
-password = your_plex_password
-# Or use token instead if you use 2FA:
-# token = your_plex_token
-servername = Your Plex Server Name
+- **As a subchart of the plex chart:** The **parent** (`homelab/helm/plex`) creates the config (ConfigMap, Secret, or ExternalSecret) from file templates and overrides `skip.persistence.config` (e.g. `type: secret`, `name: plex-auto-skip`) so this chart mounts that resource at `/config`. See the **plex** chart’s values and README for `skip.plexAutoskipConfig`, `skip.config`, `skip.logging`, `skip.customJson`, and Reloader.
+- **Standalone:** Provide config yourself. Either use the default PVC and copy `config.ini` (and optional `logging.ini`, `custom.json`) into the volume (e.g. via a job or `kubectl cp`), or set `persistence.config` to an existing ConfigMap/Secret that you create elsewhere.
 
-[Server]
-address = 192.168.1.10
-ssl = True
-port = 32400
+### Default: PVC at /config
 
-[Skip]
-mode = skip
-tags = intro, commercial, advertisement, credits
-types = movie, episode
-last-chapter = 0.9
-unwatched = True
+Default `persistence.config`:
+
+- `type: persistentVolumeClaim`
+- `accessMode: ReadWriteOnce`
+- `size: 100Mi`
+- Mount path: `/config`
+
+Override `skip.persistence.config` in your values (or from the parent chart) to use a ConfigMap or Secret instead.
+
+### Using an existing PVC (standalone)
+
+Use an existing PVC and put your config files in it (e.g. via a job or `kubectl cp`):
+
+```yaml
+skip:
+  persistence:
+    config:
+      enabled: true
+      type: persistentVolumeClaim
+      existingClaim: my-plex-autoskip-config
 ```
 
-See the [Configuration wiki](https://github.com/mdhiggins/PlexAutoSkip/wiki/Configuration) for all options (offsets, binge behavior, volume mode, etc.).
-
-### 2. Provide config to the chart
-
-- **Option A — PVC (default)**  
-  The chart creates a PVC for `/config`. After install, copy `config.ini` (and optional `custom.json`) into the volume (e.g. via a temporary pod or `kubectl cp` from a generated ConfigMap/Secret).
-
-- **Option B — Existing PVC**  
-  Set persistence to use an existing claim:
-
-  ```yaml
-  skip:
-    persistence:
-      config:
-        enabled: true
-        type: persistentVolumeClaim
-        existingClaim: my-plex-autoskip-config
-  ```
-
-- **Option C — ConfigMap / Secret (e.g. External Secrets)**  
-  Mount config from a Secret or ConfigMap:
-
-  ```yaml
-  skip:
-    persistence:
-      config:
-        enabled: true
-        type: secret
-        name: plex-autoskip-config
-  ```
-
-  Ensure the Secret/ConfigMap has a key that mounts as `config.ini` (and optionally `custom.json`) under `/config`.
-
-### 3. Plex requirements
+### Plex requirements
 
 - **Local network discovery (GDM)** should be enabled in Plex Server settings so PlexAutoSkip can discover and control playback.
 - **Token**: If using 2FA, use a [Plex token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/) in `config.ini` instead of password.
@@ -97,12 +70,13 @@ See the [Configuration wiki](https://github.com/mdhiggins/PlexAutoSkip/wiki/Conf
 
 | Area | Key | Description |
 |------|-----|-------------|
+| Persistence | `skip.persistence.config` | Volume at `/config`. Default: PVC (100Mi, ReadWriteOnce). Override with `type: configMap` or `type: secret` and `name` when the parent (or you) provides config via ConfigMap/Secret. |
 | Image | `skip.controllers.main.containers.main.image` | Default: `ghcr.io/mdhiggins/plexautoskip-docker:latest` (or version-matched on release). |
 | Env | `skip.controllers.main.containers.main.env` | `PUID`, `PGID`, `TZ`, `PAS_PATH`, `PAS_UPDATE`, `LSIO_NON_ROOT_USER`. |
-| Persistence | `skip.persistence.config` | PVC size, `existingClaim`, or `type: secret` / `type: configMap` with `name`. |
+| Pod options | `skip.defaultPodOptions` | Affinity, annotations (e.g. Reloader). Parent chart may set Reloader for the config resource it mounts. |
 | Resources | `skip.controllers.main.containers.main.resources` | CPU/memory requests and limits. |
 
-The chart runs the container as non-root (e.g. 911/911) with `LSIO_NON_ROOT_USER=true` and no Service/Ingress by default.
+The chart runs the container as non-root (e.g. 911/911) with `LSIO_NON_ROOT_USER=true` and no Service/Ingress by default. Config file generation (ConfigMap/Secret/ExternalSecret) is **not** in this chart; when used under the **plex** chart, the parent provides config and overrides `skip.persistence.config`.
 
 ## CI/CD and publishing
 
