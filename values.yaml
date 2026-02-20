@@ -1,16 +1,50 @@
-# plex-auto-skip – base chart for PlexAutoSkip (bjw-s app-template).
-# This chart only runs the app and mounts a volume at /config (default: PVC).
-# Config files (config.ini, logging.ini, custom.json) are NOT created here.
-# Parent chart (e.g. homelab/helm/plex) can create a ConfigMap, Secret, or ExternalSecret
-# and override skip.persistence.config to mount it (type: configMap or secret, name: <resource-name>).
+# plex-auto-skip – PlexAutoSkip (bjw-s app-template) with optional ExternalSecret for Plex token from 1Password.
+# When externalSecrets.enabled: config.ini (with token), logging.ini, custom.json are generated and mounted from a Secret.
+# Skip rules: always skip advertisements and episode previews; TV binge = show intro on first episode of session, then skip (session-based).
+# Movies: only ads/preview/FBI skipped (config.ini tags apply to all; Plex typically marks only ads/preview on movies). See README.
 
 fullnameOverride: plex-auto-skip
+
+# Plex credentials from 1Password via External Secrets Operator. Create 1Password item (e.g. "plex") with property "token" (Plex auth token).
+externalSecrets:
+  enabled: true
+  secretName: plex-auto-skip
+  refreshInterval: 1h
+  secretStoreRef:
+    name: onepassword-connect
+    kind: ClusterSecretStore
+  plexToken:
+    key: plex
+    property: token
 
 skip:
   global:
     fullnameOverride: plex-auto-skip
 
+  # PlexAutoSkip config.ini: tags = always skip ads + previews + intro/credits/outro for TV; Binge = session-based (first ep show intro, rest skip).
+  config:
+    servername: Plex
+    address: plex
+    ssl: false
+    port: "32400"
+    tags: "intro, commercial, advertisement, credits, outro, preview"
+    types: "movie, episode"
+    # Binge: ignore-skip-for 1 = show intro on first episode of session, then skip for rest. safe-tags = always skip even during binge.
+    ignoreSkipFor: 1
+    safeTags: "commercial, advertisement, preview"
+    sameShowOnly: true
+  logging:
+    rootLevel: DEBUG
+    consoleLevel: INFO
+    fileLevel: INFO
+    logFilename: activity.log
+    fileMaxBytes: 100000
+    fileBackupCount: 3
+  customJson: {}
+
   defaultPodOptions:
+    annotations:
+      secret.reloader.stakater.com/reload: "plex-auto-skip"
     # When replicas > 1 (HA), prefer spreading pods across nodes (soft anti-affinity). Same pattern as nextcloud, reloader, nginx.
     affinity:
       podAntiAffinity:
@@ -34,7 +68,6 @@ skip:
     main:
       enabled: false
 
-  # No config templating in this chart. Parent chart creates ConfigMap/Secret/ExternalSecret and overrides persistence.
   configMaps:
     pas-config:
       enabled: false
@@ -84,13 +117,12 @@ skip:
     main:
       enabled: false
 
-  # Default: PVC mounted at /config. Parent chart overrides to type: secret or type: configMap with name: <x> when it creates the config.
+  # When externalSecrets.enabled: mount Secret (from ExternalSecret) at /config. Otherwise use PVC.
   persistence:
     config:
       enabled: true
-      type: persistentVolumeClaim
-      accessMode: ReadWriteOnce
-      size: 100Mi
+      type: secret
+      name: plex-auto-skip
       globalMounts:
         - path: /config
           readOnly: false

@@ -12,6 +12,13 @@ Unofficial Helm chart for **[PlexAutoSkip](https://github.com/mdhiggins/PlexAuto
 
 When `skip.controllers.main.replicas` is set to 2 or more, the chart applies **soft pod anti-affinity** (preferred, `topologyKey: kubernetes.io/hostname`) so pods prefer different nodes. Same pattern as nextcloud, reloader, and nginx. Override `skip.defaultPodOptions.affinity` if you need different scheduling.
 
+## Requirements (when using External Secrets)
+
+| Dependency | Notes |
+|------------|--------|
+| **External Secrets Operator** | ClusterSecretStore (e.g. **onepassword-connect**) in the cluster. |
+| **1Password item** | Item (default title **plex**) with a field **token** (Plex auth token). Use `op item get "plex" --vault Kubernetes` to add or verify. |
+
 ## Quick start
 
 ```bash
@@ -34,23 +41,24 @@ PlexAutoSkip is headless (no Service/Ingress). It needs a **config** directory m
 2. **`custom.json`** (optional) — Per-title markers, offsets, and allow/block lists.
 3. **`logging.ini`** (optional) — Log level and output.
 
-### This chart: PVC mount only
+### Config from 1Password (External Secrets)
 
-This **base chart** does **not** generate config files. It only runs the app and mounts a **volume at `/config`**. By default that volume is a **PersistentVolumeClaim** (100Mi, ReadWriteOnce). You can override `persistence.config` to mount a ConfigMap or Secret instead (e.g. when used as a subchart and the parent provides config).
+When **`externalSecrets.enabled: true`** (default), the chart creates an **ExternalSecret** that fetches your Plex token from 1Password (item **plex**, property **token**) and generates config.ini, logging.ini, and custom.json into Secret **plex-auto-skip** at `/config`. Requires ESO and ClusterSecretStore (e.g. onepassword-connect). In 1Password add item **plex** with field **token** (Plex auth token). Set `externalSecrets.enabled: false` to use PVC or parent-provided config.
+
+### Skip rules (defaults)
+
+Always skipped: advertisements, episode previews, commercials, intro, credits, outro. TV Binge: first episode of session shows intro, then skip (session-based). Movies: same tags; typically only ads/preview/FBI.
+
+### This chart: PVC or Secret
+
+This chart can generate config (when ExternalSecret enabled) or use a volume. It only runs the app and mounts a **volume at `/config`**. By default that volume is a **PersistentVolumeClaim** (100Mi, ReadWriteOnce). You can override `persistence.config` to mount a ConfigMap or Secret instead (e.g. when used as a subchart and the parent provides config).
 
 - **As a subchart of the plex chart:** The **parent** (`homelab/helm/plex`) creates the config (ConfigMap, Secret, or ExternalSecret) from file templates and overrides `skip.persistence.config` (e.g. `type: secret`, `name: plex-auto-skip`) so this chart mounts that resource at `/config`. See the **plex** chart’s values and README for `skip.plexAutoskipConfig`, `skip.config`, `skip.logging`, `skip.customJson`, and Reloader.
 - **Standalone:** Provide config yourself. Either use the default PVC and copy `config.ini` (and optional `logging.ini`, `custom.json`) into the volume (e.g. via a job or `kubectl cp`), or set `persistence.config` to an existing ConfigMap/Secret that you create elsewhere.
 
-### Default: PVC at /config
+### Default persistence
 
-Default `persistence.config`:
-
-- `type: persistentVolumeClaim`
-- `accessMode: ReadWriteOnce`
-- `size: 100Mi`
-- Mount path: `/config`
-
-Override `skip.persistence.config` in your values (or from the parent chart) to use a ConfigMap or Secret instead.
+When `externalSecrets.enabled: true`, default `persistence.config` is `type: secret`, `name: plex-auto-skip`. When disabled, use `type: persistentVolumeClaim` (100Mi) or override to mount your own ConfigMap/Secret.
 
 ### Using an existing PVC (standalone)
 
@@ -74,13 +82,13 @@ skip:
 
 | Area | Key | Description |
 |------|-----|-------------|
-| Persistence | `skip.persistence.config` | Volume at `/config`. Default: PVC (100Mi, ReadWriteOnce). Override with `type: configMap` or `type: secret` and `name` when the parent (or you) provides config via ConfigMap/Secret. |
+| Persistence | `skip.persistence.config` | Volume at `/config`. With ExternalSecret: `type: secret`, `name: plex-auto-skip`. Else PVC or override. |
 | Image | `skip.controllers.main.containers.main.image` | Default: `ghcr.io/mdhiggins/plexautoskip-docker:latest` (or version-matched on release). |
 | Env | `skip.controllers.main.containers.main.env` | `PUID`, `PGID`, `TZ`, `PAS_PATH`, `PAS_UPDATE`, `LSIO_NON_ROOT_USER`. |
 | Pod options | `skip.defaultPodOptions` | Affinity, annotations (e.g. Reloader). Parent chart may set Reloader for the config resource it mounts. |
 | Resources | `skip.controllers.main.containers.main.resources` | CPU/memory requests and limits. |
 
-The chart runs the container as non-root (e.g. 911/911) with `LSIO_NON_ROOT_USER=true` and no Service/Ingress by default. Config file generation (ConfigMap/Secret/ExternalSecret) is **not** in this chart; when used under the **plex** chart, the parent provides config and overrides `skip.persistence.config`.
+The chart runs the container as non-root (e.g. 911/911) with `LSIO_NON_ROOT_USER=true` and no Service/Ingress by default. When `externalSecrets.enabled: true`, this chart generates config (ExternalSecret → Secret). When used under the **plex** chart, the parent can provide config instead.
 
 ## CI/CD and publishing
 
