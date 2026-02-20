@@ -11,6 +11,19 @@ skip:
     fullnameOverride: plex-auto-skip
 
   defaultPodOptions:
+    # When replicas > 1 (HA), prefer spreading pods across nodes (soft anti-affinity). Same pattern as nextcloud, reloader, nginx.
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - plex-auto-skip
+              topologyKey: kubernetes.io/hostname
     securityContext:
       runAsNonRoot: true
       runAsUser: 911

@@ -8,6 +8,10 @@ Unofficial Helm chart for **[PlexAutoSkip](https://github.com/mdhiggins/PlexAuto
 - **Docker image**: [ghcr.io/mdhiggins/plexautoskip-docker](https://github.com/mdhiggins/plexautoskip-docker) — headless, no HTTP server.
 - **Configuration**: [PlexAutoSkip Configuration wiki](https://github.com/mdhiggins/PlexAutoSkip/wiki/Configuration) — `config.ini`, `custom.json`, and optional `logging.ini`.
 
+## HA (multiple replicas)
+
+When `skip.controllers.main.replicas` is set to 2 or more, the chart applies **soft pod anti-affinity** (preferred, `topologyKey: kubernetes.io/hostname`) so pods prefer different nodes. Same pattern as nextcloud, reloader, and nginx. Override `skip.defaultPodOptions.affinity` if you need different scheduling.
+
 ## Quick start
 
 ```bash
