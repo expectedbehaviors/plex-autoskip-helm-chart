@@ -2,8 +2,8 @@ apiVersion: v2
 name: plex-auto-skip
 description: Unofficial Helm chart for PlexAutoSkip. Auto-skip intros and credits in Plex. Based on bjw-s app-template; upstream mdhiggins/PlexAutoSkip.
 type: application
-version: 0.0.2
-appVersion: "0.0.2"
+version: 0.0.3
+appVersion: "0.0.3"
 kubeVersion: ">=1.22.0-0"
 keywords:
   - plex
