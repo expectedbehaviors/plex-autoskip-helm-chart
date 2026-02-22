@@ -19,6 +19,29 @@ When `skip.controllers.main.replicas` is set to 2 or more, the chart applies **s
 | **External Secrets Operator** | ClusterSecretStore (e.g. **onepassword-connect**) in the cluster. |
 | **1Password item** | Item (default title **plex**) with a field **token** (Plex auth token). Use `op item get "plex" --vault Kubernetes` to add or verify. |
 
+## Argo CD
+
+Deploy via Argo CD. Example Application (adjust repo/path/namespace):
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: plex-autoskip
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/expectedbehaviors/plex-autoskip-helm-chart
+    path: .
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: media-server
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+```
+
 ## Quick start
 
 ```bash
@@ -51,7 +74,7 @@ Always skipped: advertisements, episode previews, commercials, intro, credits, o
 
 ### This chart: PVC or Secret
 
-This chart can generate config (when ExternalSecret enabled) or use a volume. It only runs the app and mounts a **volume at `/config`**. By default that volume is a **PersistentVolumeClaim** (100Mi, ReadWriteOnce). You can override `persistence.config` to mount a ConfigMap or Secret instead (e.g. when used as a subchart and the parent provides config).
+This chart can generate config (when ExternalSecret enabled) or use a volume. It only runs the app and mounts a **volume at `/config`**. By default that volume is a **PersistentVolumeClaim** (100Mi, ReadWriteOnce). **Volumes are defined in Longhorn** when using PVC; or override `persistence.config` to mount a ConfigMap or Secret (e.g. when used as a subchart and the parent provides config).
 
 - **As a subchart of the plex chart:** The **parent** (`homelab/helm/plex`) creates the config (ConfigMap, Secret, or ExternalSecret) from file templates and overrides `skip.persistence.config` (e.g. `type: secret`, `name: plex-auto-skip`) so this chart mounts that resource at `/config`. See the **plex** chart’s values and README for `skip.plexAutoskipConfig`, `skip.config`, `skip.logging`, `skip.customJson`, and Reloader.
 - **Standalone:** Provide config yourself. Either use the default PVC and copy `config.ini` (and optional `logging.ini`, `custom.json`) into the volume (e.g. via a job or `kubectl cp`), or set `persistence.config` to an existing ConfigMap/Secret that you create elsewhere.
