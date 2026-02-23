@@ -2,8 +2,38 @@ apiVersion: v1
 entries:
   plex-auto-skip:
   - apiVersion: v2
+    appVersion: 0.0.4
+    created: "2026-02-23T06:16:17.965143414Z"
+    dependencies:
+    - alias: skip
+      name: app-template
+      repository: https://bjw-s-labs.github.io/helm-charts
+      version: 4.6.2
+    description: Unofficial Helm chart for PlexAutoSkip. Auto-skip intros and credits
+      in Plex. Based on bjw-s app-template; upstream mdhiggins/PlexAutoSkip.
+    digest: fda6a0e1efc72bb1fc13098cd3c28df8ae69694e7c08315fd108f0fce3397b67
+    home: https://github.com/mdhiggins/PlexAutoSkip
+    icon: https://www.plex.tv/wp-content/uploads/2018/01/pmp-icon-1.png
+    keywords:
+    - plex
+    - plex-autoskip
+    - bjw-s
+    - app-template
+    kubeVersion: '>=1.22.0-0'
+    maintainers:
+    - email: expectedbehaviors@gmail.com
+      name: Jacob Dresdale
+    name: plex-auto-skip
+    sources:
+    - https://github.com/mdhiggins/PlexAutoSkip
+    - https://github.com/mdhiggins/plexautoskip-docker
+    type: application
+    urls:
+    - https://expectedbehaviors.github.io/plex-autoskip-helm-chart/plex-auto-skip-0.0.4.tgz
+    version: 0.0.4
+  - apiVersion: v2
     appVersion: 0.0.3
-    created: "2026-02-20T07:18:49.221487153Z"
+    created: "2026-02-23T06:16:17.959388086Z"
     dependencies:
     - alias: skip
       name: app-template
@@ -33,7 +63,7 @@ entries:
     version: 0.0.3
   - apiVersion: v2
     appVersion: 0.0.2
-    created: "2026-02-20T07:18:49.215051134Z"
+    created: "2026-02-23T06:16:17.953393378Z"
     dependencies:
     - alias: skip
       name: app-template
@@ -63,7 +93,7 @@ entries:
     version: 0.0.2
   - apiVersion: v2
     appVersion: 0.0.1
-    created: "2026-02-20T07:18:49.208354482Z"
+    created: "2026-02-23T06:16:17.947522079Z"
     dependencies:
     - alias: skip
       name: app-template
@@ -91,4 +121,4 @@ entries:
     urls:
     - https://expectedbehaviors.github.io/plex-autoskip-helm-chart/plex-auto-skip-0.0.1.tgz
     version: 0.0.1
-generated: "2026-02-20T07:18:49.201953961Z"
+generated: "2026-02-23T06:16:17.94149366Z"
