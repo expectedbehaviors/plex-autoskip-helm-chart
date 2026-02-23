@@ -2,3 +2,4 @@ Chart.lock
 charts/*.tgz
 PR_DESCRIPTION*.md
 .DS_Store
+requirements.lock
