@@ -1,5 +1,4 @@
 # Populate release notes from the merged PR, summarized as bullet points via OpenAI.
-# Uses reusable action from github-actions repo. Requires OPENAI_API_KEY secret (see .github/workflows/README.md).
 
 name: Release notes from PR
 
@@ -20,18 +19,8 @@ jobs:
   update-release-notes:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
-    permissions:
-      contents: write
-      pull-requests: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Update release notes from PR (OpenAI)
-        uses: expectedbehaviors/github-actions/.github/actions/release-notes@main
-        with:
-          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release_tag: ${{ github.event.inputs.release_tag }}
-          prompt_instruction: "Include concrete datapoints: chart version, plex-autoskip version, migration notes, breaking changes, and key values (Plex, credits)."
+    uses: expectedbehaviors/github-actions/.github/workflows/helm-chart-release-notes.yml@main
+    secrets: inherit
+    with:
+      release_tag: ${{ github.event.inputs.release_tag }}
+      prompt_instruction: "Include concrete datapoints: chart version, plex-autoskip version, migration notes, breaking changes, and key values (Plex, credits)."

@@ -1,5 +1,4 @@
 # Package the Helm chart with version-matched image tag and attach to GitHub Release.
-# Uses reusable action from github-actions repo. Chart root = repo root.
 
 name: Helm chart publish
 
@@ -23,19 +22,10 @@ jobs:
   package-and-upload:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Package and upload Helm chart
-        id: helm-publish
-        uses: expectedbehaviors/github-actions/.github/actions/helm-publish@main
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          chart_path: .
-          chart_name: plex-auto-skip
-          values_image_tag_key: skip.controllers.main.containers.main.image.tag
-          release_tag: ${{ github.event.inputs.release_tag }}
+    uses: expectedbehaviors/github-actions/.github/workflows/helm-chart-publish.yml@main
+    secrets: inherit
+    with:
+      chart_path: .
+      chart_name: plex-auto-skip
+      values_image_tag_key: skip.controllers.main.containers.main.image.tag
+      release_tag: ${{ github.event.inputs.release_tag }}
