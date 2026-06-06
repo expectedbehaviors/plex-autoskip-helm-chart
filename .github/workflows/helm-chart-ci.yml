@@ -19,10 +19,6 @@ on:
       - 'templates/**'
   release:
     types: [published]
-  workflow_run:
-    workflows: ["Helm chart CI"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       release_tag:
