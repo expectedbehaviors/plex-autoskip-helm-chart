@@ -3,7 +3,7 @@ entries:
   plex-auto-skip:
   - apiVersion: v2
     appVersion: 0.0.5
-    created: "2026-02-23T22:52:36.588712975Z"
+    created: "2026-06-06T02:47:26.601432814Z"
     dependencies:
     - alias: skip
       name: app-template
@@ -11,7 +11,7 @@ entries:
       version: 4.6.2
     description: Unofficial Helm chart for PlexAutoSkip. Auto-skip intros and credits
       in Plex. Based on bjw-s app-template; upstream mdhiggins/PlexAutoSkip.
-    digest: 8dd2bb2e18a99e867c700302edd79a5b3f96315b457e1dd05eab7cc96081d914
+    digest: 11bee6f99e3e581c5261a3b4d5937052c670b557ef2d8ce194853507ae88e7a6
     home: https://github.com/mdhiggins/PlexAutoSkip
     icon: https://www.plex.tv/wp-content/uploads/2018/01/pmp-icon-1.png
     keywords:
@@ -33,7 +33,7 @@ entries:
     version: 0.0.5
   - apiVersion: v2
     appVersion: 0.0.4
-    created: "2026-02-23T22:52:36.582565426Z"
+    created: "2026-06-06T02:47:26.595465969Z"
     dependencies:
     - alias: skip
       name: app-template
@@ -63,7 +63,7 @@ entries:
     version: 0.0.4
   - apiVersion: v2
     appVersion: 0.0.3
-    created: "2026-02-23T22:52:36.576711175Z"
+    created: "2026-06-06T02:47:26.589370902Z"
     dependencies:
     - alias: skip
       name: app-template
@@ -93,7 +93,7 @@ entries:
     version: 0.0.3
   - apiVersion: v2
     appVersion: 0.0.2
-    created: "2026-02-23T22:52:36.570772154Z"
+    created: "2026-06-06T02:47:26.583250568Z"
     dependencies:
     - alias: skip
       name: app-template
@@ -123,7 +123,7 @@ entries:
     version: 0.0.2
   - apiVersion: v2
     appVersion: 0.0.1
-    created: "2026-02-23T22:52:36.564122629Z"
+    created: "2026-06-06T02:47:26.577286311Z"
     dependencies:
     - alias: skip
       name: app-template
@@ -151,4 +151,4 @@ entries:
     urls:
     - https://expectedbehaviors.github.io/plex-autoskip-helm-chart/plex-auto-skip-0.0.1.tgz
     version: 0.0.1
-generated: "2026-02-23T22:52:36.55550556Z"
+generated: "2026-06-06T02:47:26.570502794Z"
