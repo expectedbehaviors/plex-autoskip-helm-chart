@@ -1,0 +1,42 @@
+name: Helm chart CI
+
+on:
+  push:
+    branches: [main]
+    paths: &chart_paths
+      - 'Chart.yaml'
+      - 'values.yaml'
+      - 'README.md'
+      - '.helmignore'
+      - 'templates/**'
+  pull_request:
+    branches: [main]
+    paths: *chart_paths
+  release:
+    types: [published]
+  workflow_run:
+    workflows: ["Helm chart CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag override (e.g. v0.1.0)'
+        required: false
+
+concurrency: helm-chart-plex-autoskip
+
+jobs:
+  ci:
+    uses: expectedbehaviors/github-actions/.github/workflows/helm-chart-ci.yml@main
+    secrets: inherit
+    with:
+      chart_path: .
+      chart_name: plex-auto-skip
+      tag_prefix: v
+      helm_repositories: |
+        bjw-s=https://bjw-s-labs.github.io/helm-charts
+      publish_enabled: true
+      release_notes_enabled: true
+      values_image_tag_key: skip.controllers.main.containers.main.image.tag
+      release_tag: ${{ github.event.inputs.release_tag || '' }}
