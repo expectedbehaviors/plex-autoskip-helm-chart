@@ -1,17 +1,12 @@
-# plex-auto-skip – PlexAutoSkip (bjw-s app-template) with optional ExternalSecret for Plex token from 1Password.
-# When externalSecrets.enabled: config.ini (with token), logging.ini, custom.json are generated and mounted from a Secret.
-# Skip rules: always skip advertisements and episode previews; TV binge = show intro on first episode of session, then skip (session-based).
-# Movies: only ads/preview/FBI skipped (config.ini tags apply to all; Plex typically marks only ads/preview on movies). See README.
-
+# PlexAutoSkip baseline — override Plex address, externalSecrets, and skip config in your private values repo.
 fullnameOverride: plex-auto-skip
 
-# Plex credentials from 1Password via External Secrets Operator. Create 1Password item (e.g. "plex") with property "token" (Plex auth token).
 externalSecrets:
-  enabled: true
+  enabled: false
   secretName: plex-auto-skip
   refreshInterval: 1h
   secretStoreRef:
-    name: onepassword-connect
+    name: cluster-secret-store
     kind: ClusterSecretStore
   plexToken:
     key: plex
@@ -20,65 +15,31 @@ externalSecrets:
 skip:
   global:
     fullnameOverride: plex-auto-skip
-
-  # PlexAutoSkip config.ini: tags = always skip ads + previews + intro/credits/outro for TV; Binge = session-based (first ep show intro, rest skip).
   config:
     servername: Plex
-    address: plex
+    address: plex.example.svc.cluster.local
     ssl: false
     port: "32400"
     tags: "intro, commercial, advertisement, credits, outro, preview"
     types: "movie, episode"
-    # Binge: ignore-skip-for 1 = show intro on first episode of session, then skip for rest. safe-tags = always skip even during binge.
     ignoreSkipFor: 1
     safeTags: "commercial, advertisement, preview"
     sameShowOnly: true
   logging:
-    rootLevel: DEBUG
+    rootLevel: INFO
     consoleLevel: INFO
     fileLevel: INFO
     logFilename: activity.log
     fileMaxBytes: 100000
     fileBackupCount: 3
   customJson: {}
-
   defaultPodOptions:
-    annotations:
-      secret.reloader.stakater.com/reload: "plex-auto-skip"
-    # When replicas > 1 (HA), prefer spreading pods across nodes (soft anti-affinity). Same pattern as nextcloud, reloader, nginx.
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                  - key: app.kubernetes.io/name
-                    operator: In
-                    values:
-                      - plex-auto-skip
-              topologyKey: kubernetes.io/hostname
-    securityContext:
-      runAsNonRoot: true
-      runAsUser: 911
-      runAsGroup: 911
-      fsGroup: 911
-
-  ingress:
-    main:
-      enabled: false
-
-  configMaps:
-    pas-config:
-      enabled: false
-      data: {}
-
+    annotations: {}
   controllers:
     main:
       enabled: true
       type: deployment
       replicas: 1
-      initContainers: {}
       containers:
         main:
           image:
@@ -88,7 +49,7 @@ skip:
           env:
             PUID: "911"
             PGID: "911"
-            TZ: America/Los_Angeles
+            TZ: UTC
             PAS_PATH: /usr/local/pas
             PAS_UPDATE: "false"
             LSIO_NON_ROOT_USER: "true"
@@ -106,18 +67,9 @@ skip:
             limits:
               cpu: 200m
               memory: 128Mi
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 911
-            runAsGroup: 911
-            readOnlyRootFilesystem: false
-            allowPrivilegeEscalation: false
-
-  service:
+  ingress:
     main:
       enabled: false
-
-  # When externalSecrets.enabled: mount Secret (from ExternalSecret) at /config. Otherwise use PVC.
   persistence:
     config:
       enabled: true
@@ -126,7 +78,3 @@ skip:
       globalMounts:
         - path: /config
           readOnly: false
-    pas-config-files:
-      enabled: false
-      type: configMap
-      identifier: pas-config
