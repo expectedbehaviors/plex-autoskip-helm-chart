@@ -76,7 +76,7 @@ Always skipped: advertisements, episode previews, commercials, intro, credits, o
 
 This chart can generate config (when ExternalSecret enabled) or use a volume. It only runs the app and mounts a **volume at `/config`**. By default that volume is a **PersistentVolumeClaim** (100Mi, ReadWriteOnce). **Volumes are defined in Longhorn** when using PVC; or override `persistence.config` to mount a ConfigMap or Secret (e.g. when used as a subchart and the parent provides config).
 
-- **As a subchart of the plex chart:** The **parent** (`homelab/helm/plex`) creates the config (ConfigMap, Secret, or ExternalSecret) from file templates and overrides `skip.persistence.config` (e.g. `type: secret`, `name: plex-auto-skip`) so this chart mounts that resource at `/config`. See the **plex** chart’s values and README for `skip.plexAutoskipConfig`, `skip.config`, `skip.logging`, `skip.customJson`, and Reloader.
+- **As a subchart of a parent chart:** The **parent** (for example your private Plex chart) creates the config (ConfigMap, Secret, or ExternalSecret) from file templates and overrides `skip.persistence.config` (e.g. `type: secret`, `name: plex-auto-skip`) so this chart mounts that resource at `/config`. See the parent chart’s values and README for `skip.plexAutoskipConfig`, `skip.config`, `skip.logging`, `skip.customJson`, and Reloader.
 - **Standalone:** Provide config yourself. Either use the default PVC and copy `config.ini` (and optional `logging.ini`, `custom.json`) into the volume (e.g. via a job or `kubectl cp`), or set `persistence.config` to an existing ConfigMap/Secret that you create elsewhere.
 
 ### Default persistence
